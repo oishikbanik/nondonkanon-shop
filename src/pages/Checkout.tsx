@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, CreditCard, Truck, Shield } from 'lucide-react';
@@ -10,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/use-toast';
+import { createOrder } from '@/services/api';
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -35,35 +35,38 @@ const Checkout = () => {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Basic validation
-    const requiredFields = ['name', 'email', 'phone', 'address', 'city', 'state', 'pincode'];
-    const missingFields = requiredFields.filter(field => !formData[field]);
-    
-    if (missingFields.length > 0) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields.",
-        variant: "destructive",
-      });
+    if (state.items.length === 0) {
+      toast({ title: "Cart is empty", variant: "destructive" });
       return;
     }
-
-    // Simulate order placement
-    const orderId = Math.random().toString(36).substr(2, 9).toUpperCase();
-    
-    toast({
-      title: "Order Placed Successfully!",
-      description: `Your order #${orderId} has been placed. You will receive a confirmation email shortly.`,
-    });
-
-    // Clear cart
-    dispatch({ type: 'CLEAR_CART' });
-    
-    // Redirect to a success page or home
-    navigate('/', { state: { orderSuccess: true, orderId } });
+    try {
+      const orderData = {
+        items: state.items.map(item => ({
+          product: item.id,
+          quantity: item.quantity,
+          price: item.price,
+        })),
+        totalAmount: state.total,
+        shippingAddress: {
+          address: formData.address,
+          city: formData.city,
+          postalCode: formData.pincode,
+          country: 'India', // or from formData if you have it
+        },
+      };
+      await createOrder(orderData);
+      dispatch({ type: 'CLEAR_CART' });
+      toast({ title: "Order placed successfully" });
+      navigate('/profile');
+    } catch (err: any) {
+      toast({
+        title: "Order failed",
+        description: err?.response?.data?.message || 'Order error',
+        variant: "destructive",
+      });
+    }
   };
 
   const subtotal = state.total;

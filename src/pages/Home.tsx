@@ -5,10 +5,22 @@ import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carouse
 import ProductCard from '@/components/ProductCard';
 import { Sparkles, Heart } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { getProducts } from '@/services/api';
 
 const Home = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const totalSlides = 3; // Number of slides in heroImages
+
+  const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    getProducts()
+      .then(res => setFeaturedProducts(res.data.slice(0, 8))) // Show first 8 as featured
+      .catch(() => setFeaturedProducts([]))
+      .finally(() => setLoading(false));
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -17,48 +29,6 @@ const Home = () => {
 
     return () => clearInterval(timer);
   }, [totalSlides]);
-
-  const featuredProducts = [
-    {
-      id: '1',
-      name: 'Royal Silk Banarasi Saree',
-      price: 4599,
-      originalPrice: 6999,
-      image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400&h=400&fit=crop',
-      category: 'sarees',
-      rating: 4.8,
-      isBestSeller: true
-    },
-    {
-      id: '2',
-      name: 'Vitamin C Brightening Serum',
-      price: 1899,
-      originalPrice: 2499,
-      image: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=400&h=400&fit=crop',
-      category: 'skincare',
-      rating: 4.6,
-      isNew: true
-    },
-    {
-      id: '3',
-      name: 'Gold Plated Kundan Earrings',
-      price: 2299,
-      image: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=400&fit=crop',
-      category: 'jewelry',
-      rating: 4.7,
-      isTrending: true
-    },
-    {
-      id: '4',
-      name: 'Designer Georgette Saree',
-      price: 3299,
-      originalPrice: 4799,
-      image: 'https://images.unsplash.com/photo-1583391733956-6c78276477e2?w=400&h=400&fit=crop',
-      category: 'sarees',
-      rating: 4.9,
-      isTrending: true
-    }
-  ];
 
   const heroImages = [
     {

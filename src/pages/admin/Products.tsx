@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Plus, Pencil, Trash2, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,35 +30,27 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { getProducts, createProduct, updateProduct, deleteProduct } from '@/services/api';
 
 const AdminProducts = () => {
   const { toast } = useToast();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
-
-  // Mock products data (in real app, this would come from an API)
-  const [products] = useState([
-    {
-      id: '1',
-      name: 'Royal Silk Banarasi Saree',
-      price: 4599,
-      category: 'sarees',
-      stock: 15,
-      description: 'Traditional elegance meets modern style',
-      image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c'
-    },
-    {
-      id: '2',
-      name: 'Vitamin C Brightening Serum',
-      price: 1899,
-      category: 'skincare',
-      stock: 25,
-      description: 'For radiant and glowing skin',
-      image: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be'
-    }
-  ]);
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({
+    name: '', price: '', category: '', stock: '', description: '', image: ''
+  });
 
   const categories = ['sarees', 'skincare', 'jewelry'];
+
+  useEffect(() => {
+    setLoading(true);
+    getProducts()
+      .then(res => setProducts(res.data))
+      .catch(() => setProducts([]))
+      .finally(() => setLoading(false));
+  }, []);
 
   const handleImageUpload = (files: FileList | null) => {
     if (files && files.length > 0) {
@@ -70,14 +62,35 @@ const AdminProducts = () => {
     }
   };
 
-  const handleDeleteProduct = () => {
-    if (selectedProduct) {
-      // In a real app, this would call an API
-      toast({
-        title: "Product Deleted",
-        description: "The product has been deleted successfully.",
+  const handleAddProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await createProduct({
+        name: form.name,
+        price: Number(form.price),
+        category: form.category,
+        stock: Number(form.stock),
+        description: form.description,
+        imageUrl: form.image
       });
-      setIsDeleteDialogOpen(false);
+      setProducts([res.data, ...products]);
+      toast({ title: 'Product added' });
+      setForm({ name: '', price: '', category: '', stock: '', description: '', image: '' });
+    } catch (err: any) {
+      toast({ title: 'Add failed', description: err?.response?.data?.message || 'Error', variant: 'destructive' });
+    }
+  };
+
+  const handleDeleteProduct = async () => {
+    if (selectedProduct) {
+      try {
+        await deleteProduct(selectedProduct._id || selectedProduct.id);
+        setProducts(products.filter(p => (p._id || p.id) !== (selectedProduct._id || selectedProduct.id)));
+        toast({ title: 'Product deleted' });
+        setIsDeleteDialogOpen(false);
+      } catch (err: any) {
+        toast({ title: 'Delete failed', description: err?.response?.data?.message || 'Error', variant: 'destructive' });
+      }
     }
   };
 
@@ -96,20 +109,37 @@ const AdminProducts = () => {
             <DialogHeader>
               <DialogTitle>Add New Product</DialogTitle>
             </DialogHeader>
-            <form className="space-y-4">
+            <form className="space-y-4" onSubmit={handleAddProduct}>
               <div>
                 <Label htmlFor="name">Product Name</Label>
-                <Input id="name" placeholder="Enter product name" />
+                <Input 
+                  id="name" 
+                  placeholder="Enter product name" 
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                />
               </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="price">Price</Label>
-                  <Input id="price" type="number" placeholder="Enter price" />
+                  <Input 
+                    id="price" 
+                    type="number" 
+                    placeholder="Enter price" 
+                    value={form.price}
+                    onChange={(e) => setForm({ ...form, price: e.target.value })}
+                  />
                 </div>
                 <div>
                   <Label htmlFor="stock">Stock</Label>
-                  <Input id="stock" type="number" placeholder="Enter stock quantity" />
+                  <Input 
+                    id="stock" 
+                    type="number" 
+                    placeholder="Enter stock quantity" 
+                    value={form.stock}
+                    onChange={(e) => setForm({ ...form, stock: e.target.value })}
+                  />
                 </div>
               </div>
 
@@ -118,6 +148,8 @@ const AdminProducts = () => {
                 <select 
                   id="category"
                   className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                  value={form.category}
+                  onChange={(e) => setForm({ ...form, category: e.target.value })}
                 >
                   <option value="">Select category</option>
                   {categories.map(category => (
@@ -130,7 +162,12 @@ const AdminProducts = () => {
 
               <div>
                 <Label htmlFor="description">Description</Label>
-                <Textarea id="description" placeholder="Enter product description" />
+                <Textarea 
+                  id="description" 
+                  placeholder="Enter product description" 
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                />
               </div>
 
               <div>

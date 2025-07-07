@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -16,6 +16,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
+import { getAllUsers } from "@/services/api";
 
 interface Customer {
   id: string;
@@ -34,25 +35,8 @@ interface Order {
 }
 
 export default function AdminCustomers() {
-  const [customers] = useState<Customer[]>([
-    {
-      id: "1",
-      name: "John Doe",
-      email: "john@example.com",
-      joinDate: "2025-01-15",
-      orderCount: 5,
-      totalSpent: 549.99,
-    },
-    {
-      id: "2",
-      name: "Jane Smith",
-      email: "jane@example.com",
-      joinDate: "2025-02-20",
-      orderCount: 3,
-      totalSpent: 299.99,
-    },
-  ]);
-
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [customerOrders] = useState<Order[]>([
     {
@@ -68,6 +52,14 @@ export default function AdminCustomers() {
       total: 149.99,
     },
   ]);
+
+  useEffect(() => {
+    setLoading(true);
+    getAllUsers()
+      .then((res) => setCustomers(res.data))
+      .catch(() => setCustomers([]))
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <div className="p-6">

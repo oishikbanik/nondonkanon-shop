@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
@@ -7,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { register } from '@/services/api';
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -28,7 +28,7 @@ const Signup = () => {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Basic validation
@@ -45,36 +45,25 @@ const Signup = () => {
 
     if (password !== confirmPassword) {
       toast({
-        title: "Password Mismatch",
-        description: "Passwords do not match.",
+        title: "Passwords do not match",
         variant: "destructive",
       });
       return;
     }
 
-    if (password.length < 6) {
+    try {
+      const res = await register(name, email, password);
+      localStorage.setItem('user', JSON.stringify(res.data.user));
+      localStorage.setItem('token', res.data.token);
+      toast({ title: "Signup successful" });
+      navigate('/');
+    } catch (err: any) {
       toast({
-        title: "Weak Password",
-        description: "Password must be at least 6 characters long.",
+        title: "Signup failed",
+        description: err?.response?.data?.message || 'Registration error',
         variant: "destructive",
       });
-      return;
     }
-
-    // Simulate signup (in real app, this would call an authentication API)
-    toast({
-      title: "Account Created",
-      description: "Your account has been created successfully. Welcome to Elegance!",
-    });
-
-    // Store user data (in real app, this would use proper authentication)
-    localStorage.setItem('user', JSON.stringify({
-      email: formData.email,
-      name: formData.name,
-      phone: formData.phone
-    }));
-
-    navigate('/');
   };
 
   return (

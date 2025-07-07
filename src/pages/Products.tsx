@@ -1,5 +1,4 @@
-
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { Filter, X, Grid, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,38 +7,29 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider';
 import { Checkbox } from '@/components/ui/checkbox';
 import ProductCard from '@/components/ProductCard';
+import { getProducts } from '@/services/api';
 
 const Products = () => {
   const { category } = useParams();
   const [searchParams] = useSearchParams();
   const searchQuery = searchParams.get('search') || '';
-  
+
   const [showFilters, setShowFilters] = useState(false);
   const [priceRange, setPriceRange] = useState([0, 10000]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState('featured');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-  // Enhanced product data with realistic content
-  const allProducts = [
-    // Sarees
-    { id: '1', name: 'Royal Silk Banarasi Saree', price: 4599, originalPrice: 6999, image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400&h=400&fit=crop', category: 'sarees', rating: 4.8, isBestSeller: true, stock: 5 },
-    { id: '2', name: 'Designer Georgette Saree', price: 3299, originalPrice: 4799, image: 'https://images.unsplash.com/photo-1583391733956-6c78276477e2?w=400&h=400&fit=crop', category: 'sarees', rating: 4.9, isTrending: true, stock: 8 },
-    { id: '3', name: 'Cotton Handloom Saree', price: 1899, image: 'https://images.unsplash.com/photo-1594736797933-d0808ba62ac6?w=400&h=400&fit=crop', category: 'sarees', rating: 4.5, isNew: true, stock: 12 },
-    { id: '4', name: 'Chiffon Printed Saree', price: 2499, originalPrice: 3299, image: 'https://images.unsplash.com/photo-1610030469749-c7de640bc36a?w=400&h=400&fit=crop', category: 'sarees', rating: 4.6, stock: 7 },
-    
-    // Skincare
-    { id: '5', name: 'Vitamin C Brightening Serum', price: 1899, originalPrice: 2499, image: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=400&h=400&fit=crop', category: 'skincare', rating: 4.6, isNew: true, stock: 15 },
-    { id: '6', name: 'Retinol Night Cream', price: 2299, image: 'https://images.unsplash.com/photo-1570194065650-d99fb4bedf0a?w=400&h=400&fit=crop', category: 'skincare', rating: 4.7, isBestSeller: true, stock: 10 },
-    { id: '7', name: 'Hyaluronic Acid Moisturizer', price: 1599, originalPrice: 2199, image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400&h=400&fit=crop', category: 'skincare', rating: 4.8, stock: 20 },
-    { id: '8', name: 'Niacinamide Face Serum', price: 1299, image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=400&fit=crop', category: 'skincare', rating: 4.5, isTrending: true, stock: 18 },
-    
-    // Jewelry
-    { id: '9', name: 'Gold Plated Kundan Earrings', price: 2299, image: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=400&fit=crop', category: 'jewelry', rating: 4.7, isTrending: true, stock: 8 },
-    { id: '10', name: 'Silver Pearl Necklace Set', price: 3499, originalPrice: 4999, image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=400&h=400&fit=crop', category: 'jewelry', rating: 4.9, isBestSeller: true, stock: 5 },
-    { id: '11', name: 'Traditional Jhumka Earrings', price: 1799, image: 'https://images.unsplash.com/photo-1611652022419-a9419f74343d?w=400&h=400&fit=crop', category: 'jewelry', rating: 4.6, stock: 12 },
-    { id: '12', name: 'Diamond-cut Bangles Set', price: 2899, originalPrice: 3999, image: 'https://images.unsplash.com/photo-1506630448388-4e683c67ddb0?w=400&h=400&fit=crop', category: 'jewelry', rating: 4.8, isNew: true, stock: 6 },
-  ];
+  const [allProducts, setAllProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    getProducts(category)
+      .then(res => setAllProducts(res.data))
+      .catch(() => setAllProducts([]))
+      .finally(() => setLoading(false));
+  }, [category]);
 
   const categories = ['sarees', 'skincare', 'jewelry'];
 
@@ -92,7 +82,7 @@ const Products = () => {
     }
 
     return filtered;
-  }, [category, searchQuery, selectedCategories, priceRange, sortBy]);
+  }, [category, searchQuery, selectedCategories, priceRange, sortBy, allProducts]);
 
   const handleCategoryChange = (categoryName: string, checked: boolean) => {
     if (checked) {
@@ -250,7 +240,11 @@ const Products = () => {
 
         {/* Products Grid */}
         <div className="flex-1">
-          {filteredProducts.length > 0 ? (
+          {loading ? (
+            <div className="text-center py-16">
+              <p className="text-gray-600 mb-4">Loading products...</p>
+            </div>
+          ) : filteredProducts.length > 0 ? (
             <div className={`grid gap-6 ${
               viewMode === 'grid' 
                 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 

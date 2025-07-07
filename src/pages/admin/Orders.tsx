@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Package, Search, Phone, Mail, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,6 +25,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
+import { getAllOrders, updateOrderStatus } from '@/services/api';
 
 interface Order {
   id: string;
@@ -41,38 +42,30 @@ interface Order {
 const AdminOrders = () => {
   const { toast } = useToast();
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  // Mock orders data (in real app, this would come from an API)
-  const [orders, setOrders] = useState<Order[]>([
-    {
-      id: 'ORD001',
-      customer: 'John Doe',
-      email: 'john@example.com',
-      phone: '+91 98765 43210',
-      address: '123 Main St, Mumbai, Maharashtra, 400001',
-      items: [
-        { name: 'Royal Silk Banarasi Saree', quantity: 1, price: 4599 }
-      ],
-      total: 4599,
-      status: 'New',
-      date: '2024-01-15'
-    },
-    {
-      id: 'ORD002',
-      customer: 'Jane Smith',
-      email: 'jane@example.com',
-      phone: '+91 98765 43211',
-      address: '456 Park Ave, Delhi, 110001',
-      items: [
-        { name: 'Gold Plated Kundan Earrings', quantity: 1, price: 2299 }
-      ],
-      total: 2299,
-      status: 'Processing',
-      date: '2024-01-10'
-    }
-  ]);
-
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    setLoading(true);
+    getAllOrders()
+      .then(res => setOrders(res.data))
+      .catch(() => setOrders([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleUpdateOrderStatus = async (orderId: string, newStatus: string) => {
+    try {
+      const res = await updateOrderStatus(orderId, newStatus);
+      setOrders(orders.map(order =>
+        (order._id || order.id) === orderId ? { ...order, status: newStatus } : order
+      ));
+      toast({ title: `Order marked as ${newStatus}` });
+    } catch (err: any) {
+      toast({ title: 'Update failed', description: err?.response?.data?.message || 'Error', variant: 'destructive' });
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -87,19 +80,6 @@ const AdminOrders = () => {
       default:
         return 'bg-gray-100 text-gray-800';
     }
-  };
-
-  const updateOrderStatus = (orderId: string, newStatus: Order['status']) => {
-    setOrders(orders.map(order => 
-      order.id === orderId 
-        ? { ...order, status: newStatus }
-        : order
-    ));
-
-    toast({
-      title: "Order Updated",
-      description: `Order ${orderId} has been marked as ${newStatus}`,
-    });
   };
 
   const filteredOrders = orders.filter(order => {
@@ -250,21 +230,21 @@ const AdminOrders = () => {
                           <div className="flex gap-2">
                             <Button 
                               variant="outline" 
-                              onClick={() => updateOrderStatus(order.id, 'Processing')}
+                              onClick={() => handleUpdateOrderStatus(order.id, 'Processing')}
                               disabled={order.status === 'Processing'}
                             >
                               Mark as Processing
                             </Button>
                             <Button 
                               variant="outline"
-                              onClick={() => updateOrderStatus(order.id, 'Shipped')}
+                              onClick={() => handleUpdateOrderStatus(order.id, 'Shipped')}
                               disabled={order.status === 'Shipped'}
                             >
                               Mark as Shipped
                             </Button>
                             <Button 
                               variant="outline"
-                              onClick={() => updateOrderStatus(order.id, 'Delivered')}
+                              onClick={() => handleUpdateOrderStatus(order.id, 'Delivered')}
                               disabled={order.status === 'Delivered'}
                             >
                               Mark as Delivered

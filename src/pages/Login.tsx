@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
@@ -7,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { login } from '@/services/api';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -24,9 +24,8 @@ const Login = () => {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     // Basic validation
     if (!formData.email || !formData.password) {
       toast({
@@ -36,25 +35,19 @@ const Login = () => {
       });
       return;
     }
-
-    // Simulate login (in real app, this would call an authentication API)
-    // For demo purposes, if email contains 'admin', treat as admin user
-    const isAdmin = formData.email.toLowerCase().includes('admin');
-    
-    toast({
-      title: "Login Successful",
-      description: `Welcome back${isAdmin ? ' Admin' : ''}! You have been logged in successfully.`,
-    });
-
-    // Store login state (in real app, this would use proper authentication)
-    localStorage.setItem('user', JSON.stringify({
-      email: formData.email,
-      name: formData.email.split('@')[0],
-      isAdmin
-    }));
-
-    // Redirect admins to admin dashboard, regular users to home
-    navigate(isAdmin ? '/admin' : '/');
+    try {
+      const res = await login(formData.email, formData.password);
+      localStorage.setItem('user', JSON.stringify(res.data.user));
+      localStorage.setItem('token', res.data.token);
+      toast({ title: "Login successful" });
+      navigate('/');
+    } catch (err: any) {
+      toast({
+        title: "Login failed",
+        description: err?.response?.data?.message || 'Invalid credentials',
+        variant: "destructive",
+      });
+    }
   };
 
   return (

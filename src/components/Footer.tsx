@@ -58,7 +58,7 @@ const Footer = () => {
             <div className="space-y-2 text-gray-400">
               <p>📞 +91 98765 43210</p>
               <p>📧 hello@elegance.com</p>
-              <p>📍 Mumbai, India</p>
+              <p>📍 Dhaka, Bangladesh</p>
             </div>
           </div>
         </div>

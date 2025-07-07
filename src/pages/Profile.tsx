@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { User, Package, MapPin, Heart, Settings, LogOut } from 'lucide-react';
@@ -8,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { getProfile, getMyOrders } from '@/services/api';
 
 const Profile = () => {
   const { toast } = useToast();
@@ -21,54 +21,27 @@ const Profile = () => {
     state: '',
     pincode: ''
   });
-
-  // Mock orders data
-  const orders = [
-    {
-      id: 'ORD001',
-      date: '2024-01-15',
-      status: 'Delivered',
-      total: 2999,
-      items: [
-        { name: 'Elegant Silk Saree', image: '/placeholder.svg', quantity: 1 }
-      ]
-    },
-    {
-      id: 'ORD002',
-      date: '2024-01-10',
-      status: 'Shipped',
-      total: 1299,
-      items: [
-        { name: 'Vitamin C Serum', image: '/placeholder.svg', quantity: 1 }
-      ]
-    },
-    {
-      id: 'ORD003',
-      date: '2024-01-05',
-      status: 'Processing',
-      total: 899,
-      items: [
-        { name: 'Gold Plated Earrings', image: '/placeholder.svg', quantity: 1 }
-      ]
-    }
-  ];
+  const [orders, setOrders] = useState<any[]>([]);
 
   useEffect(() => {
-    // Load user data from localStorage (in real app, this would come from authentication)
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      const parsedUser = JSON.parse(userData);
-      setUser(parsedUser);
-      setFormData({
-        name: parsedUser.name || '',
-        email: parsedUser.email || '',
-        phone: parsedUser.phone || '',
-        address: parsedUser.address || '',
-        city: parsedUser.city || '',
-        state: parsedUser.state || '',
-        pincode: parsedUser.pincode || ''
-      });
-    }
+    getProfile()
+      .then(res => {
+        setUser(res.data);
+        setFormData({
+          name: res.data.name || '',
+          email: res.data.email || '',
+          phone: res.data.phone || '',
+          address: res.data.address || '',
+          city: res.data.city || '',
+          state: res.data.state || '',
+          pincode: res.data.pincode || ''
+        });
+      })
+      .catch(() => setUser(null));
+
+    getMyOrders()
+      .then(res => setOrders(res.data))
+      .catch(() => setOrders([]));
   }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
